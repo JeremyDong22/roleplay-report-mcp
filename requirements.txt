@@ -1,0 +1,27 @@
+# MCP Server Dependencies
+# For roleplay-report-mcp server
+# Version: 1.1.0
+# Updated: 2025-10-22 - Added SOCKS proxy support
+
+# MCP Python SDK - Framework for building MCP servers
+mcp>=1.0.0
+
+# Supabase Python Client - Database connectivity
+supabase>=2.0.0
+
+# Pydantic - Input validation and data models
+pydantic>=2.0.0
+
+# Python-dotenv - Environment variable management
+python-dotenv>=1.0.0
+
+# SOCKS proxy support - Required when using proxy servers
+httpx[socks]>=0.27.0
+
+# Additional dependencies (auto-installed with above)
+# - httpx (for async HTTP requests)
+# - postgrest-py (Supabase dependency)
+# - realtime-py (Supabase dependency)
+# - storage3 (Supabase dependency)
+# - gotrue (Supabase authentication)
+# - socksio (SOCKS proxy support)
