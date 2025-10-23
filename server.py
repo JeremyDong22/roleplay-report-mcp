@@ -4,20 +4,21 @@ Roleplay Restaurant Report MCP Server
 This MCP server provides tools to query restaurant roleplay task performance data
 from the roleplay_daily_reports materialized view in Supabase.
 
-Version: 1.2.2
+Version: 1.3.0
 Created: 2025-10-22
-Updated: 2025-10-22 - Fixed SQL syntax error (removed semicolon from metadata query)
-Previous: 1.2.1 - Fixed Tool 1 to avoid information_schema
+Updated: 2025-10-24 - Enhanced Tool 2 with report-centric description and opening/closing period categorization
+Previous: 1.2.2 - Fixed SQL syntax error (removed semicolon from metadata query)
+         1.2.1 - Fixed Tool 1 to avoid information_schema
          1.2.0 - Added server-level instructions
          1.1.0 - Enhanced tool descriptions
 
 Tools (MUST be called in order):
 1. get_view_schema_and_samples - ⚠️ REQUIRED FIRST: Returns schema and sample data
-2. execute_custom_query - Executes SQL queries (requires schema knowledge from Tool 1)
+2. execute_custom_query - Generates comprehensive performance reports with period categorization
 
 WORKFLOW:
 - Always call Tool 1 first to understand available columns
-- Then use Tool 2 to execute queries with correct column names
+- Then use Tool 2 to generate reports with comprehensive data by default
 
 Security: Read-only queries only, SQL injection prevention enforced
 """
@@ -409,35 +410,38 @@ def get_view_schema_and_samples() -> Dict[str, Any]:
 @mcp.tool(
     description="""⚠️ PREREQUISITE: Must call get_view_schema_and_samples FIRST before using this tool!
 
-Execute custom SQL SELECT queries on roleplay_daily_reports view.
+Execute custom SQL queries to generate comprehensive performance reports from the
+roleplay_daily_reports materialized view.
 
-REQUIRED WORKFLOW:
-1. First call get_view_schema_and_samples to get column names
-2. 👉 Then call this tool with correct column names in your query
+**Report Philosophy**: When users request a report, fetch ALL available columns
+for the specified scope. The view contains 57 pre-calculated KPI metrics across
+overall, role-based, and period-based dimensions.
 
-Features:
-- Supports any SELECT query
-- Auto-limits rows (default 100, max 1000)
-- Returns JSON formatted data
+**Query Guidelines**:
+- Daily report: SELECT * for single date
+- Weekly/Monthly: SELECT * for date range (or aggregate with AVG/SUM)
+- Multi-restaurant: Include all restaurants, optionally GROUP BY restaurant
+- Let SQL do the filtering (WHERE clause), return comprehensive data
 
-Security:
-- SELECT queries only (read-only)
-- Blocks INSERT, UPDATE, DELETE, DROP, etc.
-- Automatic SQL injection prevention
+**Period Categorizations** (for opening/closing questions):
+- 开市 (Opening): 开店时段, 午市准备时段, 晚市准备时段
+  (Setup tasks BEFORE guest service)
+- 闭市 (Closing): 午市收市时段, 收市打烊时段
+  (Cleanup tasks AFTER service ends)
 
-Common queries:
-- Single restaurant: WHERE "餐厅完整名称" ILIKE '%绵阳%'
-- Compare restaurants: ORDER BY "总体任务完成率" DESC
-- Trend analysis: WHERE "运营日期" BETWEEN ... AND ...
-- Role analysis: SELECT "店长任务完成率", "值班经理任务完成率"...
+**Common Patterns**:
+- Single restaurant daily: WHERE "餐厅完整名称" ILIKE '%name%' AND "运营日期"::date = 'YYYY-MM-DD'
+- Weekly trend: date BETWEEN start AND end, optionally AVG() for summary
+- Multi-restaurant comparison: Omit restaurant filter, GROUP BY "餐厅完整名称"
+- Opening/closing analysis: Use period columns (开店时段任务完成率, etc.)
 
-IMPORTANT: Column names are in Chinese and require double quotes!
+**Security**: SELECT-only, max 1000 rows, 25k character limit applies.
 
 Parameters:
 - query: SQL SELECT statement (required)
 - row_limit: Max rows to return (default 100, max 1000)
 
-在 roleplay_daily_reports 视图上执行自定义SQL查询。
+在 roleplay_daily_reports 视图上执行自定义SQL查询以生成综合性能报告。
 
 返回格式: JSON object with success flag, query, row count, execution time, and data"""
 )
